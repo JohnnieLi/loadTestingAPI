@@ -1,8 +1,7 @@
 const express = require('express')
 const app = express()
 const port = 3000
-
-const loadtest = require('loadtest/lib/loadtest.js');
+let loadTestingService = require('./loadTest.service')();
 
 const PostOptions = {
 	url: 'https://development.autobestinfo.com',
@@ -23,23 +22,54 @@ const PostOptions = {
 	}
 };
 
-app.get('/test', (req, res) => {
+app.get('/', function(req, res){
+	res.send({result:"teat"})
+})
 
-    const options = {
-        url: 'https://development.autobestinfo.com',
-        maxRequests: 1000,
-        maxSeconds:10
-    };
+app.get('/test', async function(req, res){
+	let allResults = [];
+	try{
 
-    loadtest.loadTest(options, (error, results) => {
-        if (error) {
-            return console.error('Got an error: %s', error);
-        }
-        console.log(results);
-        console.log('Tests run successfully');
-        return res.send({result: results});
-    });
-}),
+		function statusCallback(latency, result, error) {
+			// console.log('Current latency %j, result %j, error %j', latency, result, error);
+			// console.log('----');
+			// console.log('Request elapsed milliseconds: ', result.requestElapsed);
+			// console.log('Request index: ', result.requestIndex);
+			// console.log('Request loadtest() instance index: ', result.instanceIndex);
+		}
 
-app.listen(
-    port, () => console.log(`Example app listening on port ${port}!`))
+		const options = {
+			url: 'http://localhost:3000',
+			maxSeconds:10,
+			concurrency: 1000
+		};
+		let first = await loadTestingService.start(options);
+		allResults.push(first);
+
+
+
+		// const options2 = {
+		// 	url: 'https://development.autobestinfo.com',
+		// 	maxSeconds:10,
+		// 	concurrency: 500,
+		// };
+		// let second = await loadTestingService.start(options2);
+		// allResults.push(second);
+
+
+
+		// const options3 = {
+		// 	url: 'https://development.autobestinfo.com',
+		// 	maxSeconds:10,
+		// 	concurrency: 1000,
+		// };
+		// let third = await loadTestingService.start(options3);
+		// allResults.push(third);
+		res.send({results:allResults})
+	}catch(err){
+		res.send({error:err})
+	}
+	  
+});
+
+app.listen(port, () => console.log(`Example app listening on port ${port}!`))
